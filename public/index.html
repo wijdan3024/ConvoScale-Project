@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ConvoScale — High-Performance Chat Backend & Database Engine</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Chart.js CDN for real-time telemetry graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo-container">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-text">
+        <h1>ConvoScale</h1>
+        <p>10,000 RPM Chat Backend & DB Architecture</p>
+      </div>
+    </div>
+
+    <div class="header-metrics">
+      <div class="metric-pill">
+        <span class="status-dot"></span>
+        <span>DB Pool: <strong id="hdr-db-mode">PostgreSQL</strong></span>
+      </div>
+      <div class="metric-pill">
+        <span>Current RPM: <strong id="hdr-rpm">0</strong></span>
+      </div>
+      <div class="metric-pill">
+        <span>P95 Latency: <strong id="hdr-p95">0 ms</strong></span>
+      </div>
+      <div class="metric-pill">
+        <span>User: <strong id="hdr-user">demo@convoscale.io</strong></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+    <button class="tab-btn active" data-tab="tab-chat">💬 Chatbot Interface</button>
+    <button class="tab-btn" data-tab="tab-load">⚡ 10K RPM & Load Lab</button>
+    <button class="tab-btn" data-tab="tab-acid">🔒 ACID & Concurrency Lab</button>
+    <button class="tab-btn" data-tab="tab-db">📊 Relational ER & Schema</button>
+    <button class="tab-btn" data-tab="tab-api">📖 API Docs & Explorer</button>
+  </nav>
+
+  <!-- Main Workspace -->
+  <main class="main-content">
+
+    <!-- ================================================================= -->
+    <!-- TAB 1: Chatbot Interface -->
+    <!-- ================================================================= -->
+    <section id="tab-chat" class="tab-pane active">
+      <div class="chat-layout">
+        <!-- Sidebar -->
+        <aside class="chat-sidebar">
+          <div class="glass-card" style="height: 100%; display: flex; flex-direction: column;">
+            <div class="card-header">
+              <h3 class="card-title">Conversations</h3>
+              <button id="btn-new-conv" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">+ New</button>
+            </div>
+            <div id="conversation-list" class="conversation-list">
+              <!-- Dynamically populated conversations -->
+            </div>
+          </div>
+        </aside>
+
+        <!-- Chat Workspace -->
+        <div class="chat-main glass-card" style="padding: 0; overflow: hidden;">
+          <div class="card-header" style="padding: 1rem 1.25rem; margin-bottom: 0;">
+            <div>
+              <h3 id="chat-title" class="card-title">Live Chat</h3>
+              <span id="chat-conv-id" style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">ID: --</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <span id="chat-msg-count" class="quick-btn" style="cursor: default;">0 Messages</span>
+            </div>
+          </div>
+
+          <!-- Message History -->
+          <div id="chat-messages" class="chat-messages">
+            <!-- Messages rendered dynamically -->
+          </div>
+
+          <!-- Quick Suggestion Buttons -->
+          <div class="chat-suggestions">
+            <button class="quick-btn" onclick="sendQuickMessage('/ping')">🏓 /ping</button>
+            <button class="quick-btn" onclick="sendQuickMessage('/stats')">📊 /stats</button>
+            <button class="quick-btn" onclick="sendQuickMessage('/help')">❓ /help</button>
+            <button class="quick-btn" onclick="sendQuickMessage('How does ConvoScale guarantee ACID transactions?')">🔒 ACID Guarantees</button>
+            <button class="quick-btn" onclick="sendQuickMessage('What is your pricing model?')">💳 Pricing</button>
+            <button class="quick-btn" onclick="sendQuickMessage('Tell me about 10,000 RPM scalability')">⚡ 10k RPM Architecture</button>
+          </div>
+
+          <!-- Input Bar -->
+          <form id="chat-form" class="chat-input-bar">
+            <input type="text" id="chat-input" class="input-field" placeholder="Type a message or command (e.g. /ping, /help, pricing)..." autocomplete="off">
+            <button type="submit" class="btn btn-primary">Send ↵</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- TAB 2: 10,000 RPM & Live Load Lab -->
+    <!-- ================================================================= -->
+    <section id="tab-load" class="tab-pane">
+      <div class="grid-4" style="margin-bottom: 1.5rem;">
+        <div class="stat-card">
+          <div class="stat-label">Target Throughput</div>
+          <div class="stat-value">10,000</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim);">Requests / Minute (167+ RPS)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Current RPM</div>
+          <div id="stat-current-rpm" class="stat-value">0</div>
+          <div id="stat-current-rps" style="font-size: 0.75rem; color: var(--accent-cyan);">0 Requests/Sec</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">P95 Latency</div>
+          <div id="stat-p95" class="stat-value">0 ms</div>
+          <div id="stat-avg-lat" style="font-size: 0.75rem; color: var(--text-dim);">Avg: 0 ms</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Handled</div>
+          <div id="stat-total-reqs" class="stat-value">0</div>
+          <div id="stat-err-rate" style="font-size: 0.75rem; color: var(--accent-green);">0% Error Rate</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Live Charts -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3 class="card-title">📈 Real-Time Throughput (RPM & RPS)</h3>
+          </div>
+          <div class="chart-container">
+            <canvas id="throughputChart"></canvas>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-header">
+            <h3 class="card-title">⏱️ Latency Distribution (P50, P95, P99)</h3>
+          </div>
+          <div class="chart-container">
+            <canvas id="latencyChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- In-Browser Load Tester Controller -->
+      <div class="glass-card">
+        <div class="card-header">
+          <h3 class="card-title">🚀 Interactive Live Load Generator</h3>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Generates high-frequency concurrent API requests directly from client</span>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block;">Concurrent Virtual Users (VUs):</label>
+            <select id="load-vus" class="input-field" style="width: 140px; padding: 0.4rem;">
+              <option value="50">50 VUs</option>
+              <option value="100" selected>100 VUs</option>
+              <option value="200">200 VUs</option>
+              <option value="300">300 VUs</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; color: var(--text-muted); display: block;">Duration (Seconds):</label>
+            <select id="load-duration" class="input-field" style="width: 140px; padding: 0.4rem;">
+              <option value="5">5 Seconds</option>
+              <option value="10" selected>10 Seconds</option>
+              <option value="20">20 Seconds</option>
+            </select>
+          </div>
+          <div style="margin-top: 1.25rem;">
+            <button id="btn-start-load" class="btn btn-primary" onclick="startBrowserLoadTest()">⚡ Launch 10k RPM Load Test</button>
+            <button id="btn-stop-load" class="btn btn-danger" style="display: none;" onclick="stopBrowserLoadTest()">🛑 Stop</button>
+          </div>
+        </div>
+        <div id="load-terminal" class="terminal-box">
+          [System Ready] Click "Launch 10k RPM Load Test" to generate concurrent traffic and monitor real-time backend throughput.
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- TAB 3: ACID & Concurrency Lab -->
+    <!-- ================================================================= -->
+    <section id="tab-acid" class="tab-pane">
+      <div class="grid-2">
+        <!-- ACID Rollback Test -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3 class="card-title">🔒 ACID Atomicity Rollback Simulator</h3>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Simulates mid-transaction failures (e.g., bot response crash or counter update error) to prove that uncommitted user messages and counters are 100% rolled back without leaving partial data.
+          </p>
+          <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem;">
+            <select id="acid-failure-type" class="input-field">
+              <option value="BEFORE_BOT_INSERT">Simulate Chatbot Engine Crash (Before Bot Insert)</option>
+              <option value="AFTER_USER_MSG">Simulate Server Fault (After User Insert)</option>
+              <option value="METADATA_FAIL">Simulate Conversation Counter Lock Failure</option>
+            </select>
+            <button class="btn btn-primary" onclick="runAcidSimulation()">Run Rollback Test</button>
+          </div>
+          <div id="acid-results" class="terminal-box" style="height: 220px;">
+            [ACID Lab] Select a failure point and click "Run Rollback Test" to verify atomic rollback.
+          </div>
+        </div>
+
+        <!-- Concurrency & Idempotency Lab -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3 class="card-title">⚡ Concurrency & Idempotency Guard</h3>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Fires 20 simultaneous parallel requests to the same conversation to test row-level locking, sequence monotonic ordering, and duplicate prevention.
+          </p>
+          <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem;">
+            <button class="btn btn-primary" onclick="runConcurrencyBurst()">🚀 Fire 20 Parallel Requests</button>
+            <button class="btn btn-secondary" onclick="runIdempotencyTest()">🛡️ Test Idempotent Retry</button>
+          </div>
+          <div id="concurrency-results" class="terminal-box" style="height: 220px;">
+            [Concurrency Lab] Ready. Click buttons above to test parallel race conditions and duplicate protection.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- TAB 4: Relational ER & Schema Explorer -->
+    <!-- ================================================================= -->
+    <section id="tab-db" class="tab-pane">
+      <div class="glass-card">
+        <div class="card-header">
+          <h3 class="card-title">📊 PostgreSQL Database Entity-Relationship (ER) Architecture</h3>
+          <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="refreshDbCounts()">🔄 Refresh Counts</button>
+        </div>
+
+        <!-- Table Row Counts -->
+        <div class="grid-4" id="db-counts-grid" style="margin-bottom: 1.5rem;">
+          <!-- Dynamically populated table counts -->
+        </div>
+
+        <!-- ER Diagram Visual -->
+        <div style="background: #050811; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1.5rem; overflow-x: auto;">
+          <pre style="font-family: var(--font-mono); font-size: 0.85rem; color: #38bdf8; line-height: 1.4;">
++-------------------------------------------------------------------------------------------------------------+
+|                                      CONVOSCALE RELATIONAL SCHEMA                                           |
++-------------------------------------------------------------------------------------------------------------+
+
+  [ USERS ] (1) <-----------------+ (N) [ SESSIONS ]
+    id: UUID [PK]                 |       id: UUID [PK]
+    email: VARCHAR(255) [UQ, IDX] |       user_id: UUID [FK -> users.id]
+    password_hash: VARCHAR(255)   |       token_hash: VARCHAR(255) [UQ, IDX]
+    name: VARCHAR(255)            |       expires_at: TIMESTAMP [IDX]
+    created_at: TIMESTAMP         |
+                                  |
+                                  + (N) [ CONVERSATIONS ] (1) <------------+ (N) [ MESSAGES ]
+                                          id: UUID [PK]                    |       id: UUID [PK]
+                                          user_id: UUID [FK -> users.id]   |       conversation_id: UUID [FK]
+                                          title: VARCHAR(255)              |       sender_type: USER | CHATBOT
+                                          message_count: INT               |       content: TEXT
+                                          last_message_at: TIMESTAMP       |       sequence_number: INT [IDX]
+                                          updated_at: TIMESTAMP [IDX]      |       request_id: VARCHAR [UQ, IDX]
+                                                                           |       created_at: TIMESTAMP [IDX]
+  [ CHATBOT_RESPONSES ]                                                    |
+    id: UUID [PK]                                                          + (N) [ IDEMPOTENCY_KEYS ]
+    trigger_type: COMMAND | KEYWORD | EXACT | DEFAULT                              id: UUID [PK]
+    pattern_or_keyword: VARCHAR [IDX]                                              key: VARCHAR [UQ with user_id]
+    response_template: TEXT                                                        endpoint: VARCHAR
+    priority: INT [IDX]                                                            status: PROCESSING | COMPLETED
+    is_active: BOOLEAN [IDX]                                                       response_body: JSONB / TEXT
+          </pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- TAB 5: API Documentation & Explorer -->
+    <!-- ================================================================= -->
+    <section id="tab-api" class="tab-pane">
+      <div class="glass-card">
+        <div class="card-header">
+          <h3 class="card-title">📖 REST API Endpoints Specification</h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 1rem; font-size: 0.88rem;">
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.5rem;">
+              <span style="background: #10b981; color: #000; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">POST</span>
+              <strong style="font-family: var(--font-mono);">/api/auth/login</strong>
+              <span style="color: var(--text-muted); font-size: 0.8rem;">- Authenticate user and receive JWT Bearer token</span>
+            </div>
+            <code style="color: #94a3b8; font-family: var(--font-mono); font-size: 0.8rem;">Payload: {"email": "demo@convoscale.io", "password": "password123"}</code>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.5rem;">
+              <span style="background: #3b82f6; color: #fff; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">GET</span>
+              <strong style="font-family: var(--font-mono);">/api/conversations</strong>
+              <span style="color: var(--text-muted); font-size: 0.8rem;">- List user conversations with cursor pagination (limit, cursor)</span>
+            </div>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.5rem;">
+              <span style="background: #10b981; color: #000; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">POST</span>
+              <strong style="font-family: var(--font-mono);">/api/conversations/:id/messages</strong>
+              <span style="color: var(--text-muted); font-size: 0.8rem;">- Atomic message transaction & bot response with X-Idempotency-Key</span>
+            </div>
+            <code style="color: #94a3b8; font-family: var(--font-mono); font-size: 0.8rem;">Headers: { "Authorization": "Bearer &lt;token&gt;", "X-Idempotency-Key": "req_123" }</code>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.5rem;">
+              <span style="background: #3b82f6; color: #fff; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">GET</span>
+              <strong style="font-family: var(--font-mono);">/health</strong>
+              <span style="color: var(--text-muted); font-size: 0.8rem;">- Health check reporting database status, connection pool, cache, and memory</span>
+            </div>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.5rem;">
+              <span style="background: #3b82f6; color: #fff; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">GET</span>
+              <strong style="font-family: var(--font-mono);">/api/metrics</strong>
+              <span style="color: var(--text-muted); font-size: 0.8rem;">- Live telemetry snapshots: RPM, RPS, P50/P95/P99 latencies, error counts</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+{
+  "name": "convoscale-backend",
+  "version": "1.0.0",
+  "description": "High-Performance Chat Backend & Database Engine handling 10,000+ Requests Per Minute",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "seed": "node src/db/seed.js",
+    "test": "node tests/run-all.js",
+    "test:transactions": "node --test tests/transactions/acid-rollback.test.js",
+    "test:concurrency": "node --test tests/concurrency/concurrency.test.js",
+    "test:idempotency": "node --test tests/concurrency/idempotency.test.js",
+    "test:load": "node tests/load/run-benchmarks.js",
+    "benchmark": "node tests/load/run-benchmarks.js",
+    "bench:10k": "node tests/load/load-10k-rpm.js"
+  },
+  "keywords": [
+    "backend",
+    "database-engineering",
+    "high-performance",
+    "acid-transactions",
+    "concurrency",
+    "idempotency",
+    "caching",
+    "rate-limiting",
+    "scalability"
+  ],
+  "author": "ConvoScale Engineering",
+  "license": "MIT",
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "autocannon": "^8.0.0",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "ioredis": "^6.0.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.23.0",
+    "supertest": "^7.2.2",
+    "uuid": "^14.0.2",
+    "zod": "^4.5.4"
+  }
+}
